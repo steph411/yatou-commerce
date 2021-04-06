@@ -1,0 +1,59 @@
+version: "3.7"
+
+services:
+  database:
+    image: postgres:12
+    container_name: yatou_database
+    ports:
+      - "7788:5432"
+    volumes:
+      - ./database:/var/lib/postgresql/data
+    environment: 
+      POSTGRES_PASSWORD: yatou
+      POSTGRES_USER: yatou
+      POSTGRES_DATABASE: yatou
+    
+      
+  graphql_api:
+    container_name: yatou_api
+    image: hasura/graphql-engine:latest
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    ports:
+      
+      - "7789:8080"
+    depends_on: 
+      - "database"
+    restart: always
+    environment: 
+      HASURA_GRAPHQL_DATABASE_URL: postgres://yatou:yatou@yatou_database:5432/yatou
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: "public"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: yatou-api
+      # HASURA_GRAPHQL_JWT_SECRET: '{"type": "HS512", "key": "0ddf5597e02d981f8803c4cc11f015a4e52679d706edb29b595d9e466def5bcf95273a3053ab5d97ee893c23e4023b912daefaade316406a33b7685d4d223dfa", "claims_namespace": "api"}'
+      
+  # dashboard_ui:
+  #   container_name: dashboard_ui
+  #   build: ./dashboard-ui
+  #   ports:
+  #     - "7778:3000" 
+  #   volumes:
+  #     - ./dashboard-ui:/dashboard-ui
+  #     - /dashboard-ui/node_modules
+  #   depends_on:
+  #     - "graphql_api"
+  
+  # server:
+  #   container_name: yatou_server
+  #   build: ./nginx
+  #   ports:
+  #     - "8900:80"
+  #   # volumes:
+  #     # - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  #   depends_on:
+  #     - "dashboard_ui"
+  #     - "graphql_api"
