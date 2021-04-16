@@ -1,14 +1,34 @@
-import React from 'react';
+import React, { useState } from "react";
 
-import Logo from '@assets/logoy.svg';
-import { Form, Input, Button, Checkbox } from "antd";
+import Logo from "@assets/logoy.svg";
+import { Form, Input, Button, Checkbox, message } from "antd";
+import app from "../firebase";
+import { useNavigate } from "react-router-dom";
+import { AuthState } from "../Auth";
+interface Props {
+  authState: AuthState;
+}
 
+const LoginPage: React.FC<Props> = ({ authState }) => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-const tailLayout = null
-
-const LoginPage = () => {
-  const onSubmit = (values: any) => {
-    console.log("Success:", values);
+  const onSubmit = async (values: any) => {
+    try {
+      console.log({ loginvalues: values });
+      setLoading(true);
+      const { email, password } = values;
+      const result = await app
+        .auth()
+        .signInWithEmailAndPassword(email, password);
+      console.log({ loginresult: result });
+      setLoading(false);
+      navigate("/products");
+      message.success(`Welcome ${email.split("@")[0]}`);
+    } catch (error) {
+      setLoading(false);
+      console.log({ loginerror: error });
+    }
   };
 
   const onFinishFailed = (errorInfo: any) => {
@@ -17,7 +37,7 @@ const LoginPage = () => {
 
   return (
     <div className="grid w-screen h-screen place-items-center">
-      <div className="grid w-1/3 pt-0 rounded shadow h-3/5 place-items-center">
+      <div className="grid w-1/4 pt-0 rounded shadow h-3/5 place-items-center">
         <div className="flex items-center justify-center w-full bg-light-blue-800">
           <span className="">
             <img src={Logo} alt="yatou logo" />
@@ -34,11 +54,11 @@ const LoginPage = () => {
           onFinishFailed={onFinishFailed}
         >
           <Form.Item
-            label="Username"
-            name="username"
-            rules={[{ required: true, message: "Please input your username!" }]}
+            label="email"
+            name="email"
+            rules={[{ required: true, message: "Please input your email!" }]}
           >
-            <Input />
+            <Input type="email" />
           </Form.Item>
           <Form.Item
             label="Password"
@@ -57,7 +77,7 @@ const LoginPage = () => {
           <Form.Item
           // {...tailLayout}
           >
-            <Button type="primary" htmlType="submit">
+            <Button loading={loading} type="primary" htmlType="submit">
               Submit
             </Button>
           </Form.Item>
@@ -67,7 +87,4 @@ const LoginPage = () => {
   );
 };
 
-
-
-
-export default LoginPage
+export default LoginPage;

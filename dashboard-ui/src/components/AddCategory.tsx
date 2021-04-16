@@ -1,13 +1,20 @@
 import React from 'react';
-import {Form, Upload, Input, Select, Button} from 'antd'
+import {Form, Upload, Input, Select, Button, message} from 'antd'
 import {InboxOutlined} from '@ant-design/icons'
 import ImgCrop from "antd-img-crop";
+import {CREATE_CATEGORY} from '@queries'
+import {useMutation} from '@apollo/client'
 
-interface Props{}
+interface Props{
+  close: any
+}
 
 
 
-const AddCategory: React.FC<Props> = ({}) => {
+const AddCategory: React.FC<Props> = ({close}) => {
+
+  const [createCategory] = useMutation(CREATE_CATEGORY);
+  
   const [form] = Form.useForm()
 
   const onParentCategoryChange = (data: any) => {
@@ -28,8 +35,13 @@ const AddCategory: React.FC<Props> = ({}) => {
     return ""
   }
 
-  const handleSubmit = (data:any) => {
+  const handleSubmit = async (data:any) => {
+    
     console.log({submitcategorydata: data})
+    createCategory({variables:{name: data.name, description: data.description}});
+    message.success(`category ${data.name} created`);
+    close();
+
   }
 
   const parentCategories = [
@@ -44,15 +56,15 @@ const AddCategory: React.FC<Props> = ({}) => {
         onFinish={handleSubmit}
         form={form} 
         layout="vertical">
-        <Form.Item label="Name">
+        <Form.Item label="Name" name="name">
           <Input placeholder="category name" />
         </Form.Item>
 
-        <Form.Item label="Description">
+        <Form.Item label="Description" name="description">
           <Input.TextArea placeholder="description" />
         </Form.Item>
 
-        <Form.Item label="Parent category">
+        <Form.Item name="parentCategory" label="Parent category">
           <Select
             showSearch
             style={{ width: 200 }}

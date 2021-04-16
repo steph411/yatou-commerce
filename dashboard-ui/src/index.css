@@ -1,21 +1,28 @@
 /* @import 'antd/dist/antd.css'; */
 
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-
-
-:root{
+:root {
   --main-color: #075985;
-  --main-color-darker: #0C4A6E;
-  --brand-color: #73D0F0;
-  --background-light: #F0F9FF;
-  --background-darker: #E0F2FE;
+  --main-color-darker: #0c4a6e;
+  --brand-color: #73d0f0;
+  --background-light: #f0f9ff;
+  --background-darker: #e0f2fe;
+  --brand-orange: #fdba74;
 }
 
+/* quill editor min height */
 
+.ql-editor {
+  min-height: 40rem;
+}
+
+.avatar-uploader > .ant-upload {
+  width: 200px;
+  height: 200px;
+}
 
 body {
   margin: 0;

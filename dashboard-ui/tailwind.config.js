@@ -6,12 +6,15 @@ module.exports = {
   darkMode: false, // or 'media' or 'class'
   theme: {
     extend: {
-      colors:{
+      colors: {
         "light-blue": colors.lightBlue,
-        "brand": "var(--brand-color)",
+        orange: colors.orange,
+        "cool-gray": colors.coolGray,
+        "cold-gray": colors.blueGray,
+        brand: "var(--brand-color)",
         "background-light": "var(--background-light)",
         "background-darker": "var(--background-darker)",
-      }
+      },
     },
   },
   variants: {

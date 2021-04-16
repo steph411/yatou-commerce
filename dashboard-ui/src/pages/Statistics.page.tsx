@@ -1,20 +1,12 @@
-import React from 'react';
+import React from "react";
+import { AuthState } from "../Auth";
 
-
-
-interface Props{
-
+interface Props {
+  authState: AuthState;
 }
 
-const StatisticsPage:React.FC<Props> = ({}) => {
-  return (
-    <section className="">
-      
-      <h1 className="text-xl font-semibold text-white bg-pink-600">statistics page</h1>      
-    </section>
-  )
-}
+const StatisticsPage: React.FC<Props> = ({ authState }) => {
+  return <section className=""></section>;
+};
 
-
-
-export default StatisticsPage
+export default StatisticsPage;

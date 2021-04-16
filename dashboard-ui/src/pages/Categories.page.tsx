@@ -1,20 +1,17 @@
-import React, {useState, useRef} from 'react';
-import Filter from '@assets/filter.svg?component';
+import React, { useState, useRef } from "react";
+import Filter from "@assets/filter.svg?component";
 import { DatePicker, Table, Modal } from "antd";
-import {PlusSquareOutlined} from '@ant-design/icons'
-import AddCategory from '@components/AddCategory'
-
-
+import { PlusSquareOutlined } from "@ant-design/icons";
+import AddCategory from "@components/AddCategory";
+import { useQuery } from "@apollo/client";
+import { GET_CATEGORIES } from "@queries";
+import { AuthState } from "../Auth";
 
 const { RangePicker } = DatePicker;
 
-
-
-interface Props{
-
+interface Props {
+  authState: AuthState;
 }
-
-
 
 const columns = [
   {
@@ -39,19 +36,15 @@ const columns = [
   },
 ];
 
-
-
-const CategoriesPage:React.FC<Props> = ({}) => {
-  
-  
+const CategoriesPage: React.FC<Props> = ({}) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  
-  const parentRef = useRef(null)
-  const categories:any[] = [] 
-  
-  
+  const { data, loading, error } = useQuery(GET_CATEGORIES);
+
+  const parentRef = useRef(null);
+  const categories: any[] = [];
+
   return (
-    <section className="space-y-32" id="categories" ref={parentRef}>
+    <section className="space-y-8" id="categories" ref={parentRef}>
       {/* filter and add section */}
       <div className="flex items-start justify-between font-semibold text-black">
         <div className="flex flex-col space-y-3">
@@ -67,8 +60,9 @@ const CategoriesPage:React.FC<Props> = ({}) => {
           </div>
         </div>
         <div
-          onClick={() => setIsModalVisible(true)} 
-          className="flex items-center p-2 space-x-4 transition-all shadow cursor-pointer bg-background-light hover:bg-background-darker hover:shadow-md">
+          onClick={() => setIsModalVisible(true)}
+          className="flex items-center p-2 space-x-4 transition-all shadow cursor-pointer bg-background-light hover:bg-background-darker hover:shadow-md"
+        >
           <span>Add</span>
           <PlusSquareOutlined style={{ fontSize: "24px" }} />
         </div>
@@ -76,26 +70,29 @@ const CategoriesPage:React.FC<Props> = ({}) => {
 
       {/* table section */}
       <div className="w-full">
-        <Table dataSource={categories} columns={columns} />;
+        <Table
+          dataSource={data?.product_categories}
+          rowSelection={{
+            type: "checkbox",
+          }}
+          columns={columns}
+        />
       </div>
 
       <Modal
-        
         title="Create product category"
         visible={isModalVisible}
         centered
         onOk={console.log}
-        getContainer={parentRef?.current}
+        // getContainer={() => parentRef?.current}
         okText="create"
         footer={null}
         onCancel={() => setIsModalVisible(false)}
       >
-        <AddCategory />
+        <AddCategory close={() => setIsModalVisible(false)} />
       </Modal>
     </section>
   );
-}
+};
 
-
-
-export default CategoriesPage
+export default CategoriesPage;

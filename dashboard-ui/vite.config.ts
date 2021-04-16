@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite'
-import reactRefresh from '@vitejs/plugin-react-refresh'
+import { defineConfig } from "vite";
+import reactRefresh from "@vitejs/plugin-react-refresh";
 import { getAliases } from "vite-aliases";
 import vitePluginImp from "vite-plugin-imp";
 import lessToJS from "less-vars-to-js";
 import reactSvgPlugin from "vite-plugin-react-svg";
 import path from "path";
-import fs from "fs"
+import fs from "fs";
 
 const themeVariables = lessToJS(
   fs.readFileSync(path.resolve(__dirname, "./variables.less"), "utf8")
@@ -13,12 +13,14 @@ const themeVariables = lessToJS(
 
 const aliases = getAliases();
 
-
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    port: 7800,
+  },
   plugins: [
     reactRefresh(),
-    reactSvgPlugin({ref: true}),
+    reactSvgPlugin({ ref: true }),
     vitePluginImp({
       libList: [
         {
