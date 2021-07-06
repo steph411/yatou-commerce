@@ -3,7 +3,7 @@ import Filter from "@assets/filter.svg?component";
 import { useNavigate, Link } from "react-router-dom";
 import {
   DatePicker,
-  Table,
+  // Table,
   Checkbox,
   Select,
   Dropdown,
@@ -11,7 +11,9 @@ import {
   Tag,
   Button,
   message,
+  Input
 } from "antd";
+import { Table, ExportTableButton } from "ant-table-extensions";
 import {
   DownloadOutlined,
   DownOutlined,
@@ -22,8 +24,17 @@ import {
 import firebase from "firebase/app";
 import { AuthState } from "../Auth";
 import { useQuery, useMutation } from "@apollo/client";
-import { GET_PRODUCTS, APPROVE_PRODUCTS, REJECT_PRODUCTS } from "@queries";
+import { 
+  GET_PRODUCTS_VENDOR, 
+  GET_PRODUCTS_ADMIN, 
+  GET_FILTERED_PRODUCTS_ADMIN,
+  GET_FILTERED_PRODUCTS_VENDOR,
+  GET_USERS,
+  APPROVE_PRODUCTS, 
+  REJECT_PRODUCTS 
+} from "@queries";
 import { format } from "date-fns";
+import {roles} from '@types';
 
 const { RangePicker } = DatePicker;
 
@@ -31,11 +42,22 @@ interface Props {
   authState: AuthState;
 }
 
+
+const statuses = {
+  PENDING: { color: "orange", value: "PENDING" },
+  APPROVED: { color: "cyan", value: "APPROVED" },
+  REJECTED: { color: "red", value: "REJECTED" },
+}
+
+
 const columns = [
   {
     title: "Name",
     dataIndex: "title",
     key: "name",
+    render: (name: string) => {
+      return <span key={name} className="inline-block max-w-full truncate">{name}</span>
+    }
   },
   {
     title: "SKU",
@@ -59,8 +81,8 @@ const columns = [
     title: "status",
     dataIndex: "status",
     key: "status",
-    render: (status: string) => {
-      return <Tag key={status}>{status.toUpperCase()}</Tag>;
+    render: (status: ('PENDING' | 'APPROVED' | 'REJECTED')) => {
+      return <Tag color={statuses[status].color} key={status}>{status.toUpperCase()}</Tag>;
     },
   },
 
@@ -74,6 +96,33 @@ const columns = [
   },
 ];
 
+
+const productsQueries = {
+  [roles.admin]: {
+    regular: GET_PRODUCTS_ADMIN,
+    filtered: GET_FILTERED_PRODUCTS_ADMIN
+  },
+  [roles.vendor]: {
+    regular: GET_PRODUCTS_VENDOR,
+    filtered: GET_FILTERED_PRODUCTS_VENDOR
+  }
+}
+
+interface ProductsQueryVariables {
+  vendorId?: string;
+  lowerDate?: string;
+  upperDate?: string;
+  vendor?: string;
+  statuses?: string[];
+  name?: string;
+}
+
+
+interface UserQueryVariables {
+  name?: string
+  role?: string
+}
+
 enum ProductStatuses {
   pending = "PENDING",
   approved = "APPROVED",
@@ -82,12 +131,45 @@ enum ProductStatuses {
 
 const ProductsPage: React.FC<Props> = ({ authState }) => {
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
-  authState.user?.getIdTokenResult().then((result) => {
-    console.log({ idtokenresult: result });
-  });
+  
+  // authState.user?.getIdTokenResult().then((result) => {
+  //   console.log({ idtokenresult: result });
+  // });
 
-  const { data, loading, error } = useQuery(GET_PRODUCTS, {
-    variables: { vendorId: authState.user?.uid },
+  const [nameInputValue, setNameInputValue] = useState<string>("")
+  
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  const [productQuery, setProductQuery] = useState(productsQueries[authState?.userRole as any].regular)
+
+  const [userQueryVariables, setUserQueryVariables] = useState<UserQueryVariables>({
+    name: `%%`,
+    role: authState?.userRole === roles.admin ? roles.vendor : roles.public
+  })
+
+  const [usersLoading, setUsersLoading] = useState<Boolean>(false);
+
+
+  const {data: usersData, loading: userDataLoading, error: userDataError} = useQuery(GET_USERS, {variables: userQueryVariables})
+
+  const [pendingChecked, setPendingChecked] = useState(false);
+  const [approvedChecked, setApprovedChecked] = useState(false);
+  const [rejectedChecked, setRejectedChecked] = useState(false);
+  const [dateRange, setDateRange] = useState<string[]>([])
+  const selectedStatuses = [
+    {name: ProductStatuses.approved, checked: approvedChecked},
+    {name: ProductStatuses.pending, checked: pendingChecked},
+    {name: ProductStatuses.rejected, checked: rejectedChecked}
+  ]
+
+
+  // const productQuery = productsQueries[authState?.userRole as any]; // we can not be here if the user is not authenticated
+  const [productQueryVariables, setProductQueryVariables] = useState<ProductsQueryVariables>({})
+  // if (authState?.userRole === roles.vendor){
+  //   setProductQueryVariables(old => ({...old, vendorId: authState?.user?.uid})) 
+  // }
+  const { data, loading: productsLoading, error: productsError } = useQuery(productQuery, {
+    variables: productQueryVariables
   });
 
   const [
@@ -114,17 +196,48 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
     },
   };
 
+  console.log({
+    top: tableRef?.current?.getBoundingClientRect().top
+  })
   const parentRef = useRef(null);
-  const products: any[] = [];
-  const pendingProducts = 234;
-  const [pendingChecked, setPendingChecked] = useState(false);
-  const [approvedChecked, setApprovedChecked] = useState(false);
-  const [rejectedChecked, setRejectedChecked] = useState(false);
 
-  const vendors: string[] = [];
+  
+
+
+  const handleRangeChanged = (value: any, dateString: string[]) => {
+    console.log({value, dateString})
+    setDateRange(dateString)
+  }
+
+  const handleFilterProducts = () => {
+    if (productsLoading) return
+    setProductQuery(productsQueries[authState?.userRole as any].filtered)
+    let statuses = selectedStatuses.filter(el => el.checked).map(el => el.name)
+    if (statuses.length == 0){
+      statuses = selectedStatuses.map(el => el.name);
+    }
+    let variables: ProductsQueryVariables = { 
+      statuses,
+      lowerDate: dateRange[0] || "1967-01-01",
+      upperDate: (dateRange[1] && `${dateRange[1]}T23:59:59`) || `${new Date().toISOString().split("T")[0]}T23:59:59`,
+      name: `%%`
+    }
+    if (authState.userRole === roles.admin){
+      variables.vendor = `%%`
+    }
+    if (authState.userRole === roles.vendor){
+      variables.vendorId = authState?.user?.uid
+    }
+    if (nameInputValue){
+      variables.name = `%${nameInputValue}%`
+    }
+    console.log({productQueryVariables: variables})
+    setProductQueryVariables(variables)
+  }
 
   const handlePendingChanged = () => {
-    setPendingChecked((old) => !old);
+    setPendingChecked((old) => !old)
+    
   };
   const handleApprovedChanged = () => {
     setApprovedChecked((old) => !old);
@@ -133,12 +246,21 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
     setRejectedChecked((old) => !old);
   };
 
-  const handleVendorChanged = (data: any) => {
-    console.log({ vendorchanged: data });
+  const handleVendorChanged = (data: any, option: any) => {
+    // the id of the user is in the key attribute of the option
+    console.log({ vendorchanged: data, data: {data, option} });
+    setProductQueryVariables(old => ({
+      ...old,
+      vendorId: option?.key 
+    }))
   };
 
   const handleSearchVendor = (data: any) => {
     console.log({ vendorsearched: data });
+    setUserQueryVariables(old => ({
+      ...old,
+      name: `%${data}%`
+    }))
   };
 
   const handleExport = () => {
@@ -177,12 +299,14 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
     </Menu>
   );
 
+  console.log({products: data, usersData});
+
   return (
     <section className="space-y-8" id="products" ref={parentRef}>
       {/* filter and add section */}
       <div className="flex items-start justify-between font-semibold text-black">
         <div className="flex flex-col space-y-3">
-          <div className="flex self-start p-2 space-x-4 transition-all shadow cursor-pointer bg-background-light hover:bg-background-darker hover:shadow-md">
+          <div onClick={handleFilterProducts} className="flex self-start p-2 space-x-4 transition-all shadow cursor-pointer bg-background-light hover:bg-background-darker hover:shadow-md">
             <span>filter</span>
             <span>
               <Filter />
@@ -191,11 +315,22 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
 
           <div className="flex flex-col shadow bg-background-light">
             <div className="flex items-center justify-between p-2 space-x-2">
-              <span>Date :</span>
-              <RangePicker className="flex-1" />
+              <span className="flex-none">Name :</span>
+              <Input 
+                placeholder="product name..." 
+                value={nameInputValue} 
+                onChange={ (e) => setNameInputValue(e.target.value)} 
+                />
+            </div>
+            <div className="flex items-center justify-between p-2 space-x-2">
+              <span className="flex-none">Date :</span>
+              <RangePicker
+                onChange={handleRangeChanged}
+                format="YYYY-MM-DD" 
+                className="flex-1" />
             </div>
             <div className="flex items-center justify-between p-2 space-x-2 lowercase">
-              <span>Status :</span>
+              <span className="flex-none">Status :</span>
               <div className="flex items-center">
                 <Checkbox
                   checked={pendingChecked}
@@ -218,7 +353,7 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
               </div>
             </div>
             <div className="flex items-center justify-between p-2 space-x-2">
-              <span>Vendor :</span>
+              <span>{authState.userRole === roles.admin ? 'vendor' : 'user'} :</span>
               <Select
                 showSearch
                 className="flex-1"
@@ -226,6 +361,7 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
                 placeholder="Select a person"
                 optionFilterProp="children"
                 onChange={handleVendorChanged}
+                loading={userDataLoading}
                 // onFocus={onFocus}
                 // onBlur={onBlur}
                 onSearch={handleSearchVendor}
@@ -234,9 +370,9 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
                   return true;
                 }}
               >
-                {vendors.map((el, id) => (
-                  <Select.Option key={id} value={el}>
-                    {el}
+                {usersData?.users?.map((el : any) => (
+                  <Select.Option  key={el?.id} value={el.displayName}>
+                    {el.displayName}
                   </Select.Option>
                 ))}
               </Select>
@@ -265,12 +401,30 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
           </Link>
           <div className="flex items-center space-x-4">
             <div
-              onClick={handleExport}
-              className="flex items-center px-2 py-1 ml-auto space-x-2 shadow cursor-pointer bg-background-darker active:shadow-sm"
+              // onClick={handleExport}
+              className="flex items-center ml-auto space-x-2 shadow cursor-pointer bg-background-darker active:shadow-sm"
             >
-              <span>export</span>
-              <DownloadOutlined style={{ fontSize: "20px" }} />
+              <ExportTableButton
+                dataSource={data?.products.map((el: any) => ({ ...el, key: el.id }))}
+                columns={columns}
+                btnProps={{ type: "text", block: true }}
+                fields={{
+                  Name: {header: "Name", formatter:(fieldValue, record, index) =>  record?.title },
+                  SKU: {header: "SKU", formatter:(fieldValue, record, index) => String(record.id.split("-")[0])},
+                  vendor: {header: "vendor", formatter:(fieldValue, record, index) => String(record?.user?.displayName)},
+                  category: {header: "category", formatter:(fieldValue, record, index) => String(record?.product_category?.name)},
+                  status: {header: "status", formatter:(fieldValue, record, index) => String(fieldValue)},
+                  "Date Added": {header: "date_added", formatter:(fieldValue, record, index) => String(record?.created_at.split(".")[0])},
+                }}
+                fileName={`products_${new Date().toISOString()}`}
+                showColumnPicker
+              >
+                <span>export</span>
+                <DownloadOutlined style={{ fontSize: "20px" }} />
+              </ExportTableButton>
             </div>
+
+
             <div className="flex items-center px-2 py-1 space-x-2 shadow cursor-pointer bg-background-darker active:shadow-sm">
               <Dropdown overlay={tableMenu}>
                 <span>
@@ -280,11 +434,20 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
             </div>
           </div>
         </div>
-        <Table
-          rowSelection={{ ...rowSelection }}
-          dataSource={data?.products.map((el: any) => ({ ...el, key: el.id }))}
-          columns={columns}
-        />
+
+        <div ref={tableRef}>
+          <Table
+            rowSelection={{ ...rowSelection }}
+            scroll={{
+              y: window.innerHeight - 590
+            }}
+            sticky
+            // exportable={true}
+            loading={productsLoading}
+            dataSource={data?.products.map((el: any) => ({ ...el, key: el.id }))}
+            columns={columns}
+          />
+        </div>
       </div>
     </section>
   );

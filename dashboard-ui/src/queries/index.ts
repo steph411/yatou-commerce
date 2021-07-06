@@ -1,8 +1,15 @@
 import { gql } from "@apollo/client";
 
 export const GET_CATEGORIES = gql`
-  query GetProductCategories {
-    product_categories {
+  query GetProductCategories($name: String, $lowerDate: timestamptz, $upperDate: timestamptz) {
+    product_categories(where: {
+      _and : [
+        {name: {_ilike: $name}},
+        {created_at: {_gte: $lowerDate}},
+        {created_at: {_lte: $upperDate}}  
+      ]
+    }
+    ){
       name
       id
       image
@@ -129,10 +136,61 @@ export const ADD_PRODUCT_VARIATIONS = gql`
   }
 `;
 
-export const GET_PRODUCTS = gql`
-  query GetProducts($vendorId: String) {
+
+export const GET_PRODUCTS_ADMIN = gql`
+
+query GetProductsAsAdmin{
     products_aggregate(
       where: { status: { _eq: PENDING } }
+      order_by: { created_at: desc }
+    ) {
+      aggregate {
+        count
+      }
+    }
+    products(
+      order_by: { created_at: desc }
+    ) {
+      id
+      title
+      description
+      manufacturer
+      brand
+      created_at
+      vendorId
+      status
+      product_category {
+        id
+        name
+      }
+      user {
+        id
+        displayName
+        email
+        contact
+        city
+        country
+        created_at
+      }
+    }
+  }
+
+
+`
+
+
+
+
+
+export const GET_PRODUCTS_VENDOR = gql`
+  query GetProductsAsVendor($vendorId: String) {
+    products_aggregate(
+      where: {
+        _and : [
+          { status: { _eq: PENDING } },
+          { vendorId: { _eq: $vendorId } }
+        ] 
+      },
       order_by: { created_at: desc }
     ) {
       aggregate {
@@ -167,6 +225,146 @@ export const GET_PRODUCTS = gql`
     }
   }
 `;
+
+export const GET_FILTERED_PRODUCTS_VENDOR = gql`
+  query GetFilteredProductsAsVendor($vendorId: String, $name: String, $statuses: [product_statuses_enum!]!, $lowerDate: timestamptz, $upperDate: timestamptz) {
+    products_aggregate(
+      where: {
+        _and : [
+          {created_at: {_gte: $lowerDate}},
+          {created_at: {_lte: $upperDate}},
+          { status: { _eq: PENDING } },
+          { vendorId: { _eq: $vendorId } }
+        ] 
+      },
+      order_by: { created_at: desc }
+    ) {
+      aggregate {
+        count
+      }
+    }
+    products(
+      where: {
+        _and : [
+          {created_at: {_gte: $lowerDate}},
+          {created_at: {_lte: $upperDate}},
+          {status:{_in: $statuses}},
+          {title: {_ilike: $name}},
+          { vendorId: { _eq: $vendorId } }
+        ] 
+      },
+      order_by: { created_at: desc }
+    ) {
+      id
+      title
+      description
+      manufacturer
+      brand
+      created_at
+      vendorId
+      status
+      product_category {
+        id
+        name
+      }
+      user {
+        id
+        displayName
+        email
+        contact
+        city
+        country
+        created_at
+      }
+    }
+  }
+`;
+
+export const GET_FILTERED_PRODUCTS_ADMIN = gql`
+  query GetFilteredProductsAsAdmin($vendor: String, $name: String, $statuses: [product_statuses_enum!]!, $lowerDate: timestamptz, $upperDate: timestamptz) {
+    products_aggregate(
+      where: {
+        _and : [
+          {created_at: {_gte: $lowerDate}},
+          {created_at: {_lte: $upperDate}},
+          {status: { _eq: PENDING }},
+        ] 
+      },
+      order_by: { created_at: desc }
+    ) {
+      aggregate {
+        count
+      }
+    }
+    products(
+      where: {
+        _and : [
+          {created_at: {_gte: $lowerDate}},
+          {created_at: {_lte: $upperDate}},
+          {status:{_in: $statuses}},
+          {title: {_ilike: $name}},
+          {user:{displayName:{_ilike: $vendor }}}
+        ] 
+      },
+      order_by: { created_at: desc }
+    ) {
+      id
+      title
+      description
+      manufacturer
+      brand
+      created_at
+      vendorId
+      status
+      product_category {
+        id
+        name
+      }
+      user {
+        id
+        displayName
+        email
+        contact
+        city
+        country
+        created_at
+      }
+    }
+  }
+`;
+
+
+
+
+
+
+
+
+export const GET_USERS = gql`
+  query GetUsers($name:String, $role: user_roles_enum){
+    users(where:{_and:[
+      {displayName:{_ilike: $name}},
+      {role:{_eq: $role}}
+    ]}){
+      id
+      displayName
+      created_at
+      updated_at
+      email
+      photoUrl
+    }
+  }
+
+
+
+
+
+`
+
+
+
+
+
 
 export const APPROVE_PRODUCTS = gql`
   mutation ApproveProducts($productIds: [String!]!) {

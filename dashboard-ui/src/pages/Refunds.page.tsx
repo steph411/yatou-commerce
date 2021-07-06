@@ -119,7 +119,7 @@ const RefundStatuses = {
 const RefundsPage: React.FC<Props> = ({ authState }) => {
   const parentRef = useRef(null);
   const orders: any[] = [];
-  const pendingRefunds = 23;
+  const pendingRefunds = 0;
   const [paidChecked, setPaidChecked] = useState(false);
   const [readyForPickupChecked, setReadyForPickupChecked] = useState(false);
   const [inTransitChecked, setInTransitChecked] = useState(false);
@@ -322,6 +322,10 @@ const RefundsPage: React.FC<Props> = ({ authState }) => {
           </div>
         </div>
         <Table
+          scroll={{
+            y: window.innerHeight - 534 
+          }}
+          sticky
           dataSource={orders}
           columns={columns.filter((el) => el.roles.includes(role))}
         />

@@ -67,7 +67,7 @@ const columns = [
 const EarningsPage: React.FC<Props> = ({ authState }) => {
   const parentRef = useRef(null);
   const earnings: any[] = [];
-  const totalEarnings = 340000;
+  const totalEarnings = 0;
   const role = roles.admin;
 
   const handleExport = () => {
@@ -108,6 +108,10 @@ const EarningsPage: React.FC<Props> = ({ authState }) => {
           </div>
         </div>
         <Table
+          scroll={{
+            y: window.innerHeight - 534 
+          }}
+          sticky
           dataSource={earnings}
           columns={columns.filter((el) => el.roles.includes(role))}
         />

@@ -16,5 +16,29 @@
         "destination": "/index.html"
       }
     ]
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 7999
+    },
+    "firestore": {
+      "port": 7888
+    },
+    "hosting": {
+      "port": 7777
+    },
+    "pubsub": {
+      "port": 7666
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true,
+      "port": 7755
+    }
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import Logo from "@assets/logoy.svg";
 import { Form, Input, Button, Checkbox, message } from "antd";
@@ -12,6 +12,12 @@ interface Props {
 const LoginPage: React.FC<Props> = ({ authState }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    if (authState.user){
+      navigate("/products")
+    }
+  })
 
   const onSubmit = async (values: any) => {
     try {
@@ -23,7 +29,7 @@ const LoginPage: React.FC<Props> = ({ authState }) => {
         .signInWithEmailAndPassword(email, password);
       console.log({ loginresult: result });
       setLoading(false);
-      navigate("/products");
+      navigate("/products", {replace: true});
       message.success(`Welcome ${email.split("@")[0]}`);
     } catch (error) {
       setLoading(false);

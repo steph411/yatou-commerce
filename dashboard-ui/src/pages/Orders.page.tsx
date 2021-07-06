@@ -93,7 +93,7 @@ const OrderStatuses = {
 const OrdersPage: React.FC<Props> = ({ authState }) => {
   const parentRef = useRef(null);
   const orders: any[] = [];
-  const pendingOrders = 234;
+  const pendingOrders = 0;
   const [paidChecked, setPaidChecked] = useState(false);
   const [readyForPickupChecked, setReadyForPickupChecked] = useState(false);
   const [inTransitChecked, setInTransitChecked] = useState(false);
@@ -277,6 +277,10 @@ const OrdersPage: React.FC<Props> = ({ authState }) => {
         </div>
         <Table
           dataSource={orders}
+          scroll={{
+              y: window.innerHeight - 534 
+          }}
+          sticky
           columns={columns.filter((el) => el.roles.includes(role))}
         />
       </div>

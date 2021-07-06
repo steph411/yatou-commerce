@@ -171,7 +171,13 @@ const UsersPage: React.FC<Props> = ({ authState }) => {
             </Dropdown>
           </div>
         </div>
-        <Table dataSource={products} columns={columns} />
+        <Table 
+          dataSource={products} 
+          scroll={{
+              y: window.innerHeight - 534 
+          }}
+          sticky
+          columns={columns} />
       </div>
     </section>
   );
