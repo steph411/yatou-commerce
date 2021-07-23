@@ -4,20 +4,32 @@ import Editor from "@components/Editor";
 import "react-quill/dist/quill.snow.css";
 import { DownloadOutlined } from "@ant-design/icons";
 import { AuthState } from "../Auth";
+import { useQuery, useMutation } from "@apollo/client";
+import {GET_TERMS_AND_CONDITIONS, UPDATE_TERMS_AND_CONDITIONS} from "@queries";
+
 
 interface Props {
   authState: AuthState;
 }
 
 const TermsPage: React.FC<Props> = ({ authState }) => {
+
+  const {data: termsData, loading: termsLoading, error: termsError} = useQuery(GET_TERMS_AND_CONDITIONS, {variables: {version: 1}});
+  const 
+    [updateTerms, 
+    {data: updateTermsData, loading: updateTermsLoading, error: updateTermsError}
+  ] = useMutation(UPDATE_TERMS_AND_CONDITIONS); 
+
+  console.log({termsData, termsLoading, termsError});
+  console.log({updateTermsData, updateTermsLoading, updateTermsError});
+
   const [termsVendorValue, setTermsVendorsValue] = useState("");
   const [termsVendorDelta, setTermsVendorsDelta] = useState("");
   const [termsShipperValue, setTermsShipperValue] = useState("");
   const [termsShipperDelta, setTermsShipperDelta] = useState("");
   const [termsCustomerValue, setTermsCustomerValue] = useState("");
   const [termsCustomerDelta, setTermsCustomerDelta] = useState("");
-
-  const [savingTerms, setSavingTerms] = useState(false);
+  
   const roles = [
     {
       name: "vendor",
@@ -56,7 +68,14 @@ const TermsPage: React.FC<Props> = ({ authState }) => {
     console.log({ downloadingterms: true });
   };
 
-  const handleSaveTerms = () => {
+  const handleSaveTerms = async () => {
+    const variables = {
+      vendor: termsVendorDelta,
+      shipper: termsShipperDelta,
+      customer: termsCustomerDelta,
+    }
+    const result = await updateTerms({variables});
+    console.log({saveTermsResult: result});
     console.log({ savingterms: true });
   };
 
@@ -88,7 +107,12 @@ const TermsPage: React.FC<Props> = ({ authState }) => {
               }
               key={el.name}
             >
-              <Editor value={el.value} onValueChange={handleChange(el.name)} />
+              <Editor 
+                defaultValue={termsData?.terms?.[el.name]}
+                readOnly={authState.userRole != "admin"} 
+                value={el.value} 
+                onValueChange={handleChange(el.name)} 
+              />
             </Tabs.TabPane>
           );
         })}
@@ -98,7 +122,7 @@ const TermsPage: React.FC<Props> = ({ authState }) => {
           className="px-8"
           type="primary"
           onClick={handleSaveTerms}
-          loading={savingTerms}
+          loading={updateTermsLoading}
         >
           save
         </Button>

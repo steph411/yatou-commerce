@@ -14,6 +14,7 @@ import TermsPage from "@pages/Terms.page";
 import EarningsPage from "@pages/Earnings.page";
 import StatisticsPage from "@pages/Statistics.page";
 import ProductsCreatePage from "@pages/ProductsCreate.page";
+import ProductPage from "@pages/Product.page";
 import LoginPage from "@pages/Login.page";
 import { AuthContext } from "./Auth";
 import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
@@ -67,7 +68,11 @@ function App() {
         },
         {
           path: "/products",
-          element: <ProductsPage authState={authState} />,
+          element: <ProductsPage authState={authState}/>
+        },
+        {
+          path: "/products/:productId", 
+          element: <ProductPage authState={authState}/>
         },
         {
           path: "products/create",

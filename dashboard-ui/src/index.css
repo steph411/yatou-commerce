@@ -15,14 +15,30 @@
 
 /* quill editor min height */
 
-.ql-editor {
+/* .ql-editor {
   min-height: 40rem;
+} */
+
+.avatar-uploader > .ant-upload {
+  width: 200px;
+  height: 200px;
+}
+.ql-container.ql-snow {
+  max-height: calc(100vh - 320px);
+  /* height: auto; */
+  overflow-y: auto;
+}
+.ql-editor {
+  width: 100%;
+  min-height: calc(100vh - 400px);
 }
 
 .avatar-uploader > .ant-upload {
   width: 200px;
   height: 200px;
 }
+
+
 
 body {
   margin: 0;

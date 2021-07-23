@@ -437,6 +437,9 @@ const ProductsPage: React.FC<Props> = ({ authState }) => {
 
         <div ref={tableRef}>
           <Table
+            onRow={(data: any, index: any) => ({
+              onClick: (event) => navigate(`/products/${data?.id}`)
+            })}
             rowSelection={{ ...rowSelection }}
             scroll={{
               y: window.innerHeight - 590

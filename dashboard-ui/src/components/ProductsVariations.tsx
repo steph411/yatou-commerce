@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PlusSquareOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   Modal,
@@ -13,7 +13,7 @@ import {
 import ImageUpload from "./ImageUpload";
 import AddProductVariation from "./AddProductVariation";
 import { useQuery, useMutation } from "@apollo/client";
-import { GET_PRODUCT_VARIATIONS, ADD_PRODUCT_VARIATION_IMAGES } from "@queries";
+import { GET_PRODUCT_VARIATIONS, ADD_PRODUCT_VARIATION_IMAGES, DELETE_PRODUCT_VARIATION_IMAGES } from "@queries";
 import { useNavigate } from "react-router-dom";
 import { customUpload } from "../utils/functions";
 
@@ -21,12 +21,16 @@ interface Props {
   productId: string;
   setProductId: Function;
   onNext: Function;
+  productData: any;
+  setProductData?: Function;
 }
 
 const ProductsVariations: React.FC<Props> = ({
   productId,
   setProductId,
   onNext,
+  productData,
+  setProductData
 }) => {
   const navigate = useNavigate();
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -47,9 +51,43 @@ const ProductsVariations: React.FC<Props> = ({
       error: createVariationOptionImagesError,
     },
   ] = useMutation(ADD_PRODUCT_VARIATION_IMAGES);
-  // const [createProductVariations, {data: createVariationsData, loading: createVariationsLoading, error: createVariationsError}] = useMutation()
 
+  const [
+    deleteVariationOptionImages,
+    {
+      data: deleteVariationOptionImagesData,
+      loading: deleteVariationOptionImagesLoading,
+      error: deleteVariationOptionImagesError,
+    },
+  ] = useMutation(DELETE_PRODUCT_VARIATION_IMAGES);
+  
+
+
+  console.log({productData});
   const [fileList, setFileList] = useState([]);
+
+
+  useEffect(() => {
+    const imagesOfSelectedVariationOption = productData?.product_variants
+    ?.find((el: any) => el?.id === selectedVariation)
+    ?.product_variant_options?.find((el:any) => el?.id === selectedVariationOption)
+    ?.product_images || []
+    
+    console.log({productData, imagesOfSelectedVariationOption});
+
+    const imagesData = imagesOfSelectedVariationOption?.map((el:any, index:number) => ({
+      uid: el?.id,
+      name: `${index}`,
+      status: 'done',
+      url: el?.url,
+    }));
+
+    console.log({imagesData});
+    setFileList(imagesData);
+
+
+
+  }, [productData, selectedVariationOption])
 
   const handleSearchVariation = (data: any) => {
     console.log({ variationsearched: data });
@@ -69,8 +107,16 @@ const ProductsVariations: React.FC<Props> = ({
     console.log({ creatingvariationimages: true });
     console.log({ fileList });
     const imagesData = fileList.map((el: any) => {
-      return { productVariantOptionId: selectedVariationOption, url: el?.xhr };
+      return { productVariantOptionId: selectedVariationOption, url: el?.xhr || el?.url };
     });
+
+    // first delete the existing images and replace them with the updated list
+    const deleteResult = await deleteVariationOptionImages({
+      variables: {variationOptionId: selectedVariationOption}
+    })
+
+    console.log({deleteVariationOptionimages: deleteResult});
+
     console.log({ imagesData });
     const result = await createVariationOptionImages({
       variables: { images: imagesData },
@@ -89,13 +135,14 @@ const ProductsVariations: React.FC<Props> = ({
   );
 
   const handleChange = (data: any) => {
+    console.log({filelistdata: fileList})
     setFileList(data.fileList);
-    console.log({ fileuploadeddata: data });
+    console.log({ fileuploadeddata: data, fileList });
   };
 
   return (
     <>
-      <div className="px-40 py-16 space-x-16">
+      <div className="px-8 py-8">
         <div className="flex justify-items-end">
           <div
             onClick={() => setIsModalVisible(true)}
@@ -106,7 +153,7 @@ const ProductsVariations: React.FC<Props> = ({
           </div>
         </div>
         <div className="my-6">
-          <Typography.Paragraph>variations</Typography.Paragraph>
+          <Typography.Paragraph className="font-semibold">variations</Typography.Paragraph>
           <Select
             showSearch
             className="flex-1"
@@ -122,20 +169,22 @@ const ProductsVariations: React.FC<Props> = ({
               return true;
             }}
           >
-            {data?.product_variants?.map((el: any, id: any) => (
+            {/* {data?.product_variants?.map((el: any, id: any) => ( */}
+            {productData?.product_variants?.map((el: any, id: any) => (
               <Select.Option key={el?.id} value={el?.id}>
                 {el?.name}
               </Select.Option>
             ))}
           </Select>
         </div>
-        <div className="flex space-x-8 h-96">
+        <div className="flex space-x-8 overflow-y-auto max-h-96">
           <Menu
             style={{ minWidth: "228px" }}
             className="self-start bg-white shadow"
             onSelect={handleSelectedOptionChange}
           >
-            {data?.product_variants
+            {/* {data?.product_variants */}
+            {productData?.product_variants
               ?.find((el: any) => el?.id === selectedVariation)
               ?.product_variant_options.map((el: any) => {
                 console.log({ variantoption: el });
@@ -147,6 +196,7 @@ const ProductsVariations: React.FC<Props> = ({
             <Upload
               customRequest={customUpload}
               listType="picture-card"
+              fileList={fileList}
               onChange={handleChange}
               defaultFileList={[]} //for the already present files when updating
             >
@@ -167,9 +217,9 @@ const ProductsVariations: React.FC<Props> = ({
           className="px-10"
           type="primary"
           onClick={handleCreateVariationOptionImages}
-          loading={createVariationOptionImagesLoading}
+          loading={ deleteVariationOptionImagesLoading || createVariationOptionImagesLoading}
         >
-          next
+          {productId ? "save" : "next"}
         </Button>
       </div>
       <Modal

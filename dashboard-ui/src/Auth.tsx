@@ -22,7 +22,7 @@ export const AuthProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = app.auth().onAuthStateChanged(async (user) => {
-      const idToken = await user?.getIdToken();
+      const idToken = await user?.getIdToken(true); // true in the parameter value to force token refresh
       const idTokenResult = await user?.getIdTokenResult();
       const userRole = idTokenResult?.claims.apiClaims["X-Hasura-Role"];
       setAuthstate({ user, idToken, userRole });

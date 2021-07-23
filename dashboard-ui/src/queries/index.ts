@@ -54,12 +54,73 @@ export const CREATE_CATEGORY = gql`
   }
 `;
 
+export const GET_PRODUCT = gql`
+  query GetProduct($productId: String!){
+    products_by_pk(id: $productId){
+      title
+      categoryId
+      product_category{id, name, description}
+      brand
+      price
+      created_at
+      product_group{
+        name
+      }
+      status
+      isDeleted
+      keyFeatures
+      description
+      manufacturer
+      id
+      productGroupId
+      product_images{
+        id
+        url
+        created_at
+        product {
+          id
+          title
+          created_at
+          user {
+            id
+            displayName
+            email
+          }
+        }
+      }
+      product_variants{
+        name
+        id
+        product {
+          title
+          brand
+          id
+        }
+        product_images{id, url}
+        product_variant_options{
+          id
+          price
+          value
+          created_at
+          updated_at
+          product_images{id, url}
+        }
+      }
+      searchTerms
+      vendorId
+      characteristics
+      user{adress, city, contact, email, id}
+    }
+  }
+`;
+
 export const CREATE_PRODUCT = gql`
   mutation CreateProduct(
     $title: String
     $manufacturer: String
     $brand: String
     $categoryId: String
+    $price: bigint
   ) {
     insert_products_one(
       object: {
@@ -67,17 +128,134 @@ export const CREATE_PRODUCT = gql`
         manufacturer: $manufacturer
         brand: $brand
         categoryId: $categoryId
+        price: $price
       }
     ) {
-      id
-      manufacturer
+      title
+      categoryId
+      product_category{id, name, description}
       brand
-      product_category {
-        id
+      price
+      created_at
+      product_group{
         name
       }
+      status
+      isDeleted
+      keyFeatures
+      description
+      manufacturer
+      id
+      productGroupId
+      product_images{
+        id
+        url
+        created_at
+        product {
+          id
+          title
+          created_at
+          user {
+            id
+            displayName
+            email
+          }
+        }
+      }
+      product_variants{
+        name
+        id
+        product {
+          title
+          brand
+          id
+        }
+        product_images{id, url}
+        product_variant_options{
+          id
+          price
+          value
+          created_at
+          updated_at
+          product_images{id, url}
+        }
+      }
+      searchTerms
       vendorId
+      characteristics
+      user{adress, city, contact, email, id}
+    }
+  }
+`;
+export const UPDATE_PRODUCT_GENERAL = gql`
+  mutation UpdateProductGeneralInformations(
+    $title: String
+    $manufacturer: String
+    $brand: String
+    $categoryId: String
+    $price: bigint
+    $productId: String!
+  ) {
+    update_products_by_pk(pk_columns:{id: $productId}, _set:{
+      title: $title
+      manufacturer: $manufacturer
+      brand: $brand
+      categoryId: $categoryId
+      price: $price
+    }){
+      title
+      categoryId
+      product_category{id, name, description}
+      brand
+      price
       created_at
+      product_group{
+        name
+      }
+      status
+      isDeleted
+      keyFeatures
+      description
+      manufacturer
+      id
+      productGroupId
+      product_images{
+        id
+        url
+        created_at
+        product {
+          id
+          title
+          created_at
+          user {
+            id
+            displayName
+            email
+          }
+        }
+      }
+      product_variants{
+        name
+        id
+        product {
+          title
+          brand
+          id
+        }
+        product_images{id, url}
+        product_variant_options{
+          id
+          price
+          value
+          created_at
+          updated_at
+          product_images{id, url}
+        }
+      }
+      searchTerms
+      vendorId
+      characteristics
+      user{adress, city, contact, email, id}
     }
   }
 `;
@@ -177,9 +355,6 @@ query GetProductsAsAdmin{
 
 
 `
-
-
-
 
 
 export const GET_PRODUCTS_VENDOR = gql`
@@ -334,12 +509,6 @@ export const GET_FILTERED_PRODUCTS_ADMIN = gql`
 `;
 
 
-
-
-
-
-
-
 export const GET_USERS = gql`
   query GetUsers($name:String, $role: user_roles_enum){
     users(where:{_and:[
@@ -360,10 +529,6 @@ export const GET_USERS = gql`
 
 
 `
-
-
-
-
 
 
 export const APPROVE_PRODUCTS = gql`
@@ -477,12 +642,32 @@ export const GET_PRODUCT_IMAGES = gql`
   }
 `;
 
+
+export const DELETE_PRODUCT_IMAGES = gql`
+  mutation deleteProductImages($productId: String!){
+    delete_product_images(where:{productId: {_eq: $productId}}){
+      returning{id}
+    }
+  }
+`;
+
+
+export const DELETE_PRODUCT_VARIATION_IMAGES = gql`
+  mutation deleteProductVariationsImages($variationOptionId: String!){
+    delete_product_images(where:{productVariantOptionId: {_eq: $variationOptionId}}){
+      returning{id}
+    }
+  }
+`;
+
+
 export const UPDATE_PRODUCT_DESCRIPTION = gql`
   mutation UpdateProductDescriptionAndFeatures(
     $description: jsonb
     $productId: String!
     $features: jsonb
     $terms: jsonb
+    $characteristics: jsonb
   ) {
     update_products_by_pk(
       pk_columns: { id: $productId }
@@ -490,46 +675,91 @@ export const UPDATE_PRODUCT_DESCRIPTION = gql`
         description: $description
         keyFeatures: $features
         searchTerms: $terms
+        characteristics: $characteristics
       }
     ) {
-      id
       title
-      description
-      searchTerms
+      categoryId
+      product_category{id, name, description}
       brand
-      manufacturer
-      product_group {
+      price
+      created_at
+      product_group{
         name
-        id
       }
       status
-      product_images {
+      isDeleted
+      keyFeatures
+      description
+      manufacturer
+      id
+      productGroupId
+      product_images{
         id
         url
       }
-      product_variants {
-        id
+      product_variants{
         name
-        created_at
-        updated_at
-        product_variant_options {
+        id
+        product_images{id, url}
+        product_variant_options{
           id
+          price
           value
-          created_at
-          product_images {
-            id
-            url
-          }
+          product_images{id, url}
         }
       }
-      keyFeatures
-      created_at
-      updated_at
-      user {
-        email
-        id
-        displayName
+      searchTerms
+      vendorId
+      characteristics
+      user{adress, city, contact, email, id}
+    }
+  }
+`;
+
+
+
+export const UPDATE_TERMS_AND_CONDITIONS = gql`
+  mutation SaveTerms($vendor: jsonb, $shipper: jsonb, $customer: jsonb, $version: Int){
+    insert_terms(objects:[{
+      vendor: $vendor,
+      shipper: $shipper,
+      customer: $customer,
+      version: $version
+    }],
+    on_conflict: {
+      constraint: terms_version_key,
+      update_columns: [vendor, shipper, customer]
+    }
+    ){
+      returning{
+        version
+        vendor
+        shipper
+        customer
+        updated_at
+        
       }
     }
   }
+
+
+
+`;
+
+
+
+export const GET_TERMS_AND_CONDITIONS = gql`
+
+  query GetTerms($version: Int){
+    terms(where: {version: {_eq: $version}}){
+      created_at
+      vendor
+      shipper
+      customer
+      version
+      updated_at
+    }
+  }
+
 `;
