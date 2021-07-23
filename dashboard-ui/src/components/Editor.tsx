@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import ReactQuill, { Quill } from "react-quill";
 // import { ImageDrop } from "quill-image-drop-module";
 // import MagicUrl from "quill-magic-url";
@@ -15,35 +15,42 @@ interface Props {
 // Quill.register("modules/magicUrl", MagicUrl);
 Quill.register("modules/blotFormatter", BlotFormatter);
 
+let modules = {
+  toolbar: [
+    [{ header: [1, 2, 3, 4, 5] }, { font: [] }],
+    ["bold", "italic", "underline", "strike", "blockquote"],
+    [
+      { list: "ordered" },
+      { list: "bullet" },
+      { indent: "-1" },
+      { indent: "+1" },
+    ],
+    [{ color: [] }, { background: [] }], // dropdown with defaults from theme
+    [{ align: [] }],
+    // ["link", "image", "video"],
+    ["clean"],
+  ],
+  // imageDrop: true,
+  // magicUrl: {
+  //   urlRegularExpression: /(https?:\/\/|www\.)[\w-\.]+\.[\w-\.]+(\/([\S]+)?)?/i,
+  // },
+  // blotFormatter: {
+  //   overlay: {
+  //     style: {
+  //       border: "1px solid #0C4A6E",
+  //     },
+  //   },
+  // },
+};
+
+
+
+
+
 const Editor: React.FC<Props> = ({ defaultValue, value, onValueChange, readOnly }) => {
 
-  let modules = {
-    toolbar: [
-      [{ header: [1, 2, 3, 4, 5] }, { font: [] }],
-      ["bold", "italic", "underline", "strike", "blockquote"],
-      [
-        { list: "ordered" },
-        { list: "bullet" },
-        { indent: "-1" },
-        { indent: "+1" },
-      ],
-      [{ color: [] }, { background: [] }], // dropdown with defaults from theme
-      [{ align: [] }],
-      // ["link", "image", "video"],
-      ["clean"],
-    ],
-    // imageDrop: true,
-    // magicUrl: {
-    //   urlRegularExpression: /(https?:\/\/|www\.)[\w-\.]+\.[\w-\.]+(\/([\S]+)?)?/i,
-    // },
-    // blotFormatter: {
-    //   overlay: {
-    //     style: {
-    //       border: "1px solid #0C4A6E",
-    //     },
-    //   },
-    // },
-  };
+  
+  console.log({defaultValue})
   
 
 
@@ -70,9 +77,9 @@ const Editor: React.FC<Props> = ({ defaultValue, value, onValueChange, readOnly 
   return (
     <ReactQuill
       theme="snow"
+      // key={key}
       modules={modules}
       value={value}
-      defaultValue={defaultValue}
       readOnly={readOnly}
       formats={formats}
       onChange={onValueChange}

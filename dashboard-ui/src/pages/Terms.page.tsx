@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, Button } from "antd";
 import Editor from "@components/Editor";
 import "react-quill/dist/quill.snow.css";
@@ -30,6 +30,9 @@ const TermsPage: React.FC<Props> = ({ authState }) => {
   const [termsCustomerValue, setTermsCustomerValue] = useState("");
   const [termsCustomerDelta, setTermsCustomerDelta] = useState("");
   
+
+  // update the deltas value when the data are available from the api
+  
   const roles = [
     {
       name: "vendor",
@@ -54,13 +57,26 @@ const TermsPage: React.FC<Props> = ({ authState }) => {
     },
   ];
 
+
+  // useEffect(() => {
+  //   roles.map(el => {
+  //     el.setValue(termsData?.terms?.[0]?.[el.name])
+  //   })  
+  // }, [termsData])
+  
   const handleChange = (role: string) => {
     const element = roles.find((el) => el.name === role);
+    console.log({elementRole: element});
     return (value: any, delta: any, source: any, editor: any) => {
-      console.log({ value, delta, source, editor, element });
-      element?.setValue(value);
-      const deltaData = editor.getContents();
-      element?.setDelta(deltaData);
+      if (source == 'user') {
+        // place whatever function you want to execute when user types here:
+        console.log({ value, delta, source, editor, element });
+        const deltaData = editor.getContents();
+        element?.setValue(value);
+        // element?.setValue(deltaData);
+        element?.setDelta(deltaData);
+      }
+      
     };
   };
 
@@ -108,9 +124,12 @@ const TermsPage: React.FC<Props> = ({ authState }) => {
               key={el.name}
             >
               <Editor 
-                defaultValue={termsData?.terms?.[el.name]}
+                // defaultValue={termsData?.terms?.[0]?.[el.name]}
+                // key={termsData?.terms?.[0]?.[el.name]}
                 readOnly={authState.userRole != "admin"} 
                 value={el.value} 
+                // value={el.value} 
+                key={el.name}
                 onValueChange={handleChange(el.name)} 
               />
             </Tabs.TabPane>
